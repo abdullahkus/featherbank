@@ -16,7 +16,7 @@ services:
       service: network-deploy-service
 
   configserver:
-    image: "abdullahkus/featherbank-configserver:s6"
+    image: "abdullahkus/featherbank-configserver:s7"
     container_name: configserver
     ports:
       - "8071:8071"
@@ -34,7 +34,7 @@ services:
       service: microservice-base-config
 
   accounts:
-    image: "abdullahkus/featherbank-accounts:s6"
+    image: "abdullahkus/featherbank-accounts:s7"
     container_name: accounts
     ports:
       - "8080:8080"
@@ -48,7 +48,7 @@ services:
       service: microservice-configserver-config
 
   loans:
-    image: "abdullahkus/featherbank-loans:s6"
+    image: "abdullahkus/featherbank-loans:s7"
     container_name: loans
     ports:
       - "8090:8090"
@@ -62,7 +62,7 @@ services:
       service: microservice-configserver-config
 
   cards:
-    image: "abdullahkus/featherbank-cards:s6"
+    image: "abdullahkus/featherbank-cards:s7"
     container_name: card
     ports:
       - "9000:9000"
