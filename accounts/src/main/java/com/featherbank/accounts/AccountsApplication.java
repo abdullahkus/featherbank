@@ -9,9 +9,12 @@ import io.swagger.v3.oas.annotations.info.License;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
+import org.springframework.cloud.openfeign.EnableFeignClients;
 import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 
 @SpringBootApplication
+@EnableFeignClients
 /*@ComponentScans({ @ComponentScan("com.featherbank.accounts.controller") })
 @EnableJpaRepositories("com.featherbank.accounts.repository")
 @EntityScan("com.featherbank.accounts.model")*/
