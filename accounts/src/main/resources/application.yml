@@ -32,13 +32,24 @@ management:
   endpoint:
     shutdown:
       enabled: true
+    health:
+      probes:
+        enabled: true
+  health:
+    readiness:
+      enabled: true
+    liveliness:
+      enabled: true
   info:
     env:
       enabled: true
+  tracing:
+    sampling:
+      probability: 1.0
 
 endpoints:
-    shutdown:
-        enabled: true
+  shutdown:
+    enabled: true
 
 eureka:
   instance:

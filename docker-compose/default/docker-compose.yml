@@ -6,6 +6,14 @@ services:
       - 3306:3306
     environment:
       MYSQL_DATABASE: accountsdb
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping", "-h", "accountsdb" ]
+      timeout: 10s
+      retries: 10
+      interval: 10s
+      start_period: 10s
+    volumes:
+      - featherbank-accountsdb-data:/var/lib/mysql
     extends:
       file: common-config.yml
       service: microservice-db-config
@@ -17,6 +25,14 @@ services:
       - 3307:3306
     environment:
       MYSQL_DATABASE: cardsdb
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping", "-h", "cardsdb" ]
+      timeout: 10s
+      retries: 10
+      interval: 10s
+      start_period: 10s
+    volumes:
+      - featherbank-cardsdb-data:/var/lib/mysql
     extends:
       file: common-config.yml
       service: microservice-db-config
@@ -28,11 +44,20 @@ services:
       - 3308:3306
     environment:
       MYSQL_DATABASE: loansdb
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping", "-h", "loansdb" ]
+      timeout: 10s
+      retries: 10
+      interval: 10s
+      start_period: 10s
+    volumes:
+      - featherbank-loansdb-data:/var/lib/mysql
     extends:
       file: common-config.yml
       service: microservice-db-config
 
   rabbit:
+    container_name: rabbit
     image: rabbitmq:3.13-management
     hostname: rabbitmq
     ports:
@@ -44,12 +69,29 @@ services:
       timeout: 5s
       retries: 10
       start_period: 5s
+    volumes:
+      - featherbank-rabbitmq-data:/var/lib/rabbitmq
+    extends:
+      file: common-config.yml
+      service: network-deploy-service
+
+  zipkin:
+    image: openzipkin/zipkin
+    container_name: zipkin
+    ports:
+      - 9411:9411
+    healthcheck:
+      test: "wget -qO- http://zipkin:9411/health | grep UP || exit 1"
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
     extends:
       file: common-config.yml
       service: network-deploy-service
 
   configserver:
-    image: "abdullahkus/featherbank-configserver:s8"
+    image: "abdullahkus/featherbank-configserver:s9"
     container_name: configserver
     ports:
       - "8071:8071"
@@ -57,7 +99,7 @@ services:
       rabbit:
         condition: service_healthy
     healthcheck:
-      test: "wget -qO- localhost:8071/actuator/health/readiness | grep UP || exit 1"
+      test: "wget -qO- http://configserver:8071/actuator/health/readiness | grep UP || exit 1"
       interval: 10s
       timeout: 5s
       retries: 10
@@ -65,21 +107,17 @@ services:
     extends:
       file: common-config.yml
       service: microservice-base-config
-    environment:
-      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: "http://eurekaserver:8070/eureka"
 
   eurekaserver:
-    image: "abdullahkus/featherbank-eurekaserver:s8"
+    image: "abdullahkus/featherbank-eurekaserver:s9"
     container_name: eurekaserver
     ports:
       - "8070:8070"
     depends_on:
-      rabbit:
-        condition: service_healthy
       configserver:
         condition: service_healthy
     healthcheck:
-      test: "wget -qO- localhost:8070/actuator/health/readiness | grep UP || exit 1"
+      test: "wget -qO- http://eurekaserver:8070/actuator/health/readiness | grep UP || exit 1"
       interval: 10s
       timeout: 5s
       retries: 10
@@ -89,26 +127,33 @@ services:
       service: microservice-base-config
     environment:
       SPRING_APPLICATION_NAME: "eurekaserver"
+      SPRING_CONFIG_IMPORT: "optional:configserver:http://configserver:8071/"
 
   accounts:
-    image: "abdullahkus/featherbank-accounts:s8"
+    image: "abdullahkus/featherbank-accounts:s9"
     container_name: accounts
     ports:
       - "8080:8080"
     depends_on:
       configserver:
         condition: service_healthy
-      cardsdb:
+      accountsdb:
         condition: service_healthy
+    healthcheck:
+      test: "wget -qO- http://accounts:8080/actuator/health/readiness | grep UP || exit 1"
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
     environment:
       SPRING_APPLICATION_NAME: "accounts"
       SPRING_DATASOURCE_URL: "jdbc:mysql://accountsdb:3306/accountsdb"
     extends:
       file: common-config.yml
-      service: microservice-configserver-config
+      service: microservice-eureka-config
 
   loans:
-    image: "abdullahkus/featherbank-loans:s8"
+    image: "abdullahkus/featherbank-loans:s9"
     container_name: loans
     ports:
       - "8090:8090"
@@ -117,30 +162,75 @@ services:
         condition: service_healthy
       loansdb:
         condition: service_healthy
+    healthcheck:
+      test: "wget -qO- http://loans:8090/actuator/health/readiness | grep UP || exit 1"
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
     environment:
       SPRING_APPLICATION_NAME: "loans"
       SPRING_DATASOURCE_URL: "jdbc:mysql://loansdb:3306/loansdb"
     extends:
       file: common-config.yml
-      service: microservice-configserver-config
+      service: microservice-eureka-config
 
   cards:
-    image: "abdullahkus/featherbank-cards:s8"
-    container_name: card
+    image: "abdullahkus/featherbank-cards:s9"
+    container_name: cards
     ports:
       - "9000:9000"
     depends_on:
       configserver:
         condition: service_healthy
-      accountsdb:
+      cardsdb:
         condition: service_healthy
+    healthcheck:
+      test: "wget -qO- http://cards:9000/actuator/health/readiness | grep UP || exit 1"
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
     environment:
       SPRING_APPLICATION_NAME: "cards"
       SPRING_DATASOURCE_URL: "jdbc:mysql://cardsdb:3306/cardsdb"
     extends:
       file: common-config.yml
-      service: microservice-configserver-config
+      service: microservice-eureka-config
+
+  gatewayserver:
+    image: "abdullahkus/featherbank-gatewayserver:s9"
+    container_name: gatewayserver
+    ports:
+      - "8072:8072"
+    depends_on:
+      configserver:
+        condition: service_healthy
+      accounts:
+        condition: service_healthy
+      loans:
+        condition: service_healthy
+      cards:
+        condition: service_healthy
+    environment:
+      SPRING_APPLICATION_NAME: "gatewayserver"
+    extends:
+      file: common-config.yml
+      service: microservice-eureka-config
 
 networks:
   featherbank:
-    driver: "bridge"
+    name: featherbank
+    driver: bridge
+
+volumes:
+  featherbank-accountsdb-data:
+    name: featherbank-accountsdb-data
+  featherbank-cardsdb-data:
+    name: featherbank-cardsdb-data
+  featherbank-loansdb-data:
+    name: featherbank-loansdb-data
+  featherbank-zipkindb-data:
+    name: featherbank-zipkindb-data
+  featherbank-rabbitmq-data:
+    name: featherbank-rabbitmq-data

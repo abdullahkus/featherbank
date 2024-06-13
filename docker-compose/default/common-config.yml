@@ -11,9 +11,9 @@ services:
         limits:
           memory: 700m
     environment:
-      SPRING_RABBITMQ_HOST: "rabbit"
+      SPRING_RABBITMQ_HOST: rabbit
 
-  microservice-configserver-config:
+  microservice-config-server-config:
     extends:
       service: microservice-base-config
     depends_on:
@@ -21,7 +21,7 @@ services:
         condition: service_healthy
     environment:
       SPRING_PROFILES_ACTIVE: "default"
-      SPRING_CONFIG_IMPORT: "optional:configserver:http://configserver:8071/"
+      SPRING_CONFIG_IMPORT: "configserver:http://configserver:8071/"
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: root
 
@@ -37,3 +37,21 @@ services:
       start_period: 10s
     environment:
       MYSQL_ROOT_PASSWORD: root
+
+  microservice-eureka-config:
+    depends_on:
+      eurekaserver:
+        condition: service_healthy
+      zipkin:
+        condition: service_healthy
+    extends:
+      service: microservice-config-server-config
+    environment:
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: "http://eurekaserver:8070/eureka/"
+      MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: "*"
+      MANAGEMENT_TRACING_SAMPLING_PROBABILITY: 1.0
+      MANAGEMENT_ZIPKIN_TRACING_CONNECTION_TIMEOUT: 10000
+      MANAGEMENT_ZIPKIN_TRACING_ENCODING: "JSON_V1"
+      MANAGEMENT_ZIPKIN_TRACING_READ_TIMEOUT: 10000
+      MANAGEMENT_ZIPKIN_TRACING_ENDPOINT: "http://zipkin:9411/api/v2/spans"
+      ZIPKIN_BASE-URL: http://zipkin:9411

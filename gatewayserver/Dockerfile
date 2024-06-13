@@ -7,7 +7,7 @@ MAINTAINER featherbank.com
 RUN apt-get update && apt-get install -y apt-transport-https wget iputils-ping curl
 
 # Add the application's jar to the image
-COPY target/eurekaserver-0.0.1-SNAPSHOT.jar eurekaserver-0.0.1-SNAPSHOT.jar
+COPY target/gatewayserver-0.0.1-SNAPSHOT.jar gatewayserver-0.0.1-SNAPSHOT.jar
 
 # execute the application
-ENTRYPOINT ["java", "-jar", "eurekaserver-0.0.1-SNAPSHOT.jar"]
+ENTRYPOINT ["java", "-jar", "gatewayserver-0.0.1-SNAPSHOT.jar"]

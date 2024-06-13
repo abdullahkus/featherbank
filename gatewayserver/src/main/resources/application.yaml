@@ -1,0 +1,69 @@
+spring:
+  application:
+    name: "gatewayserver"
+  config:
+    import: "optional:configserver:http://localhost:8071/"
+  cloud:
+    gateway:
+      discovery:
+        locator:
+          enabled: true
+          lower-case-service-id: true
+      routes:
+        - id: accounts_route
+          uri: lb://ACCOUNTS
+          predicates:
+            - Path=/featherbank/accounts/**
+          filters:
+            - RewritePath=/featherbank/accounts/(?<segment>.*), /${segment}
+        - id: loans_route
+          uri: lb://LOANS
+          predicates:
+            - Path=/featherbank/loans/**
+          filters:
+            - RewritePath=/featherbank/loans/(?<segment>.*), /${segment}
+        - id: cards_route
+          uri: lb://CARDS
+          predicates:
+            - Path=/featherbank/cards/**
+          filters:
+            - RewritePath=/featherbank/cards/(?<segment>.*), /${segment}
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: "guest"
+    password: "guest"
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+  endpoint:
+    shutdown:
+      enabled: true
+    health:
+      probes:
+        enabled: true
+  health:
+    readiness:
+      enabled: true
+    liveliness:
+      enabled: true
+  info:
+    env:
+      enabled: true
+  tracing:
+    sampling:
+      probability: 1.0
+
+
+endpoints:
+  shutdown:
+    enabled: true
+
+info:
+  app:
+    name: "gatewayserver"
+    description: "Gateway Server"
+    version: "1.0.0"
