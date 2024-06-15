@@ -90,8 +90,23 @@ services:
       file: common-config.yml
       service: network-deploy-service
 
+  redis:
+    image: redis
+    container_name: redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: "redis-cli ping"
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    extends:
+      file: common-config.yml
+      service: network-deploy-service
+
   configserver:
-    image: "abdullahkus/featherbank-configserver:s9"
+    image: "abdullahkus/featherbank-configserver:s10"
     container_name: configserver
     ports:
       - "8071:8071"
@@ -109,7 +124,7 @@ services:
       service: microservice-base-config
 
   eurekaserver:
-    image: "abdullahkus/featherbank-eurekaserver:s9"
+    image: "abdullahkus/featherbank-eurekaserver:s10"
     container_name: eurekaserver
     ports:
       - "8070:8070"
@@ -130,7 +145,7 @@ services:
       SPRING_CONFIG_IMPORT: "optional:configserver:http://configserver:8071/"
 
   accounts:
-    image: "abdullahkus/featherbank-accounts:s9"
+    image: "abdullahkus/featherbank-accounts:s10"
     container_name: accounts
     ports:
       - "8080:8080"
@@ -153,7 +168,7 @@ services:
       service: microservice-eureka-config
 
   loans:
-    image: "abdullahkus/featherbank-loans:s9"
+    image: "abdullahkus/featherbank-loans:s10"
     container_name: loans
     ports:
       - "8090:8090"
@@ -176,7 +191,7 @@ services:
       service: microservice-eureka-config
 
   cards:
-    image: "abdullahkus/featherbank-cards:s9"
+    image: "abdullahkus/featherbank-cards:s10"
     container_name: cards
     ports:
       - "9000:9000"
@@ -199,7 +214,7 @@ services:
       service: microservice-eureka-config
 
   gatewayserver:
-    image: "abdullahkus/featherbank-gatewayserver:s9"
+    image: "abdullahkus/featherbank-gatewayserver:s10"
     container_name: gatewayserver
     ports:
       - "8072:8072"
@@ -214,6 +229,10 @@ services:
         condition: service_healthy
     environment:
       SPRING_APPLICATION_NAME: "gatewayserver"
+      SPRING_DATA_REDIS_CONNECT-TIMEOUT: 2s
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
+      SPRING_DATA_REDIS_TIMEOUT: 1s
     extends:
       file: common-config.yml
       service: microservice-eureka-config

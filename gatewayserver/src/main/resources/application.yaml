@@ -3,6 +3,12 @@ spring:
     name: "gatewayserver"
   config:
     import: "optional:configserver:http://localhost:8071/"
+  data:
+    redis:
+      connect-timeout: 2s
+      host: localhost
+      port: 6379
+      timeout: 1s
   cloud:
     gateway:
       discovery:
@@ -16,18 +22,37 @@ spring:
             - Path=/featherbank/accounts/**
           filters:
             - RewritePath=/featherbank/accounts/(?<segment>.*), /${segment}
+            - name: CircuitBreaker
+              args:
+                name: accountsCircuitBreaker
+                fallbackUri: forward:/contactSupport
         - id: loans_route
           uri: lb://LOANS
           predicates:
             - Path=/featherbank/loans/**
           filters:
             - RewritePath=/featherbank/loans/(?<segment>.*), /${segment}
+            - name: Retry
+              args:
+                retries: 3
+                methods: GET
+                backoff:
+                  firstBackoff: 100ms
+                  maxBackoff: 1000ms
+                  factor: 2
+                  basedOnPreviousValue: true
         - id: cards_route
           uri: lb://CARDS
           predicates:
             - Path=/featherbank/cards/**
           filters:
             - RewritePath=/featherbank/cards/(?<segment>.*), /${segment}
+            - name: RequestRateLimiter
+              args:
+                rate-limiter:
+                  ref: redisRateLimiter
+                key-resolver:
+                  ref: userKeyResolver
   rabbitmq:
     host: localhost
     port: 5672
@@ -67,3 +92,12 @@ info:
     name: "gatewayserver"
     description: "Gateway Server"
     version: "1.0.0"
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      default:
+        slidingWindowSize: 10
+        permittedNumberOfCallsInHalfOpenState: 3
+        failureRateThreshold: 50
+        waitDurationInOpenState: 10000

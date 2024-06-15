@@ -23,6 +23,10 @@ spring:
     port: 5672
     username: "guest"
     password: "guest"
+  cloud:
+    feign:
+      circuitbreaker:
+        enabled: true
 
 management:
   endpoints:
@@ -51,6 +55,12 @@ endpoints:
   shutdown:
     enabled: true
 
+logging:
+  level:
+    com:
+      featherbank:
+        accounts: DEBUG
+
 eureka:
   instance:
     prefer-ip-address: true
@@ -65,3 +75,30 @@ info:
     name: "accounts"
     description: "Accounts Service"
     version: "1.0.0"
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      default:
+        slidingWindowSize: 10
+        permittedNumberOfCallsInHalfOpenState: 3
+        failureRateThreshold: 50
+        waitDurationInOpenState: 10000
+  retry:
+    configs:
+      default:
+        maxRetryAttempts: 3
+        waitDuration: 100
+        enableExponentialBackoff: true
+        exponentialBackoffMultiplier: 2.0
+        ignoreExceptions:
+          - java.lang.NullPointerException
+        retryExceptions:
+          - java.io.IOException
+          - java.util.concurrent.TimeoutException
+  rateLimiter:
+    configs:
+      default:
+        timeoutDuration: 1000
+        limitRefreshPeriod: 1000
+        limitForPeriod: 1
