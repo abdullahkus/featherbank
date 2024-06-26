@@ -50,6 +50,9 @@ management:
   tracing:
     sampling:
       probability: 1.0
+  metrics:
+    tags:
+      application: ${spring.application.name}
 
 endpoints:
   shutdown:

@@ -15,6 +15,9 @@ spring:
         locator:
           enabled: true
           lower-case-service-id: true
+      httpclient:
+        connect-timeout: 1000
+        response-timeout: 10s
       routes:
         - id: accounts_route
           uri: lb://ACCOUNTS
@@ -81,6 +84,9 @@ management:
   tracing:
     sampling:
       probability: 1.0
+  metrics:
+    tags:
+      application: ${spring.application.name}
 
 
 endpoints:
