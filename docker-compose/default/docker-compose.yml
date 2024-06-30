@@ -319,7 +319,7 @@ services:
       service: network-deploy-service
 
   configserver:
-    image: "abdullahkus/featherbank-configserver:s12"
+    image: "abdullahkus/featherbank-configserver:s13"
     container_name: configserver
     ports:
       - "8071:8071"
@@ -337,7 +337,7 @@ services:
       service: microservice-base-config
 
   eurekaserver:
-    image: "abdullahkus/featherbank-eurekaserver:s12"
+    image: "abdullahkus/featherbank-eurekaserver:s13"
     container_name: eurekaserver
     ports:
       - "8070:8070"
@@ -358,7 +358,7 @@ services:
       SPRING_CONFIG_IMPORT: "optional:configserver:http://configserver:8071/"
 
   accounts:
-    image: "abdullahkus/featherbank-accounts:s12"
+    image: "abdullahkus/featherbank-accounts:s13"
     container_name: accounts
     ports:
       - "8080:8080"
@@ -366,6 +366,8 @@ services:
       configserver:
         condition: service_healthy
       accountsdb:
+        condition: service_healthy
+      rabbit:
         condition: service_healthy
     healthcheck:
       test: "wget -qO- http://accounts:8080/actuator/health/readiness | grep UP || exit 1"
@@ -376,12 +378,13 @@ services:
     environment:
       SPRING_APPLICATION_NAME: "accounts"
       SPRING_DATASOURCE_URL: "jdbc:mysql://accountsdb:3306/accountsdb"
+      SPRING_RABBITMQ_HOST: rabbit
     extends:
       file: common-config.yml
       service: microservice-eureka-config
 
   loans:
-    image: "abdullahkus/featherbank-loans:s12"
+    image: "abdullahkus/featherbank-loans:s13"
     container_name: loans
     ports:
       - "8090:8090"
@@ -404,7 +407,7 @@ services:
       service: microservice-eureka-config
 
   cards:
-    image: "abdullahkus/featherbank-cards:s12"
+    image: "abdullahkus/featherbank-cards:s13"
     container_name: cards
     ports:
       - "9000:9000"
@@ -427,7 +430,7 @@ services:
       service: microservice-eureka-config
 
   gatewayserver:
-    image: "abdullahkus/featherbank-gatewayserver:s12"
+    image: "abdullahkus/featherbank-gatewayserver:s13"
     container_name: gatewayserver
     ports:
       - "8072:8072"
@@ -450,6 +453,18 @@ services:
     extends:
       file: common-config.yml
       service: microservice-eureka-config
+
+  message:
+    image: "abdullahkus/featherbank-message:s13"
+    container_name: message
+    depends_on:
+      rabbit:
+        condition: service_healthy
+    environment:
+      SPRING_RABBITMQ_HOST: rabbit
+    extends:
+      file: common-config.yml
+      service: network-deploy-service
 
 networks:
   featherbank:
